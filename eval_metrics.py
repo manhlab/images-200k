@@ -120,7 +120,9 @@ def evaluate_metrics(submission_df: pd.DataFrame, gt_df: pd.DataFrame):
     y_true = np.array(
         [
             tuple(row) in gt_pairs
-            for row in submission_df[["query_id", "reference_id"]].itertuples(index=False)
+            for row in submission_df[["query_id", "reference_id"]].itertuples(
+                index=False
+            )
         ]
     )
     # Confidence score, as if probability. Only property required is greater score == more confident.
@@ -150,7 +152,9 @@ def load_descriptor_h5(descs_submission_path):
         reference = f["reference"][:]
         # Coerce IDs to native Python unicode string no matter what type they were before
         query_ids = np.array(f["query_ids"][:], dtype=object).astype(str).tolist()
-        reference_ids = np.array(f["reference_ids"][:], dtype=object).astype(str).tolist()
+        reference_ids = (
+            np.array(f["reference_ids"][:], dtype=object).astype(str).tolist()
+        )
     return query, reference, query_ids, reference_ids
 
 
@@ -193,7 +197,9 @@ def search_with_capped_res(xq: np.ndarray, xb: np.ndarray, num_results: int):
         mask[o] = True
         new_dis = dis[mask]
         new_ids = ids[mask]
-        nres = [0] + [mask[lims[i] : lims[i + 1]].sum() for i in range(nq)]  # noqa: E203
+        nres = [0] + [
+            mask[lims[i] : lims[i + 1]].sum() for i in range(nq)
+        ]  # noqa: E203
         new_lims = np.cumsum(nres)
         lims, dis, ids = new_lims, new_dis, new_ids
 
@@ -236,7 +242,11 @@ def get_matching_from_descs(
     lims, dis, ids = search_with_capped_res(query, reference, num_results=nq * 10)
 
     matching_submission_df = pd.DataFrame(
-        {"query_id": query_ids[i], "reference_id": reference_ids[ids[j]], "score": -dis[j]}
+        {
+            "query_id": query_ids[i],
+            "reference_id": reference_ids[ids[j]],
+            "score": -dis[j],
+        }
         for i in range(nq)
         for j in range(lims[i], lims[i + 1])
     )
@@ -278,7 +288,9 @@ def main(
         elif submission_path.suffix.lower() in {".hdf", ".h5", ".hdf5"}:
             is_matching = False
         else:
-            typer.echo("Unable to infer track from file extension. Please specify explicitly.")
+            typer.echo(
+                "Unable to infer track from file extension. Please specify explicitly."
+            )
             raise typer.Exit(code=1)
 
     gt_df = pd.read_csv(gt_path)
@@ -287,7 +299,9 @@ def main(
         submission_df = pd.read_csv(submission_path)
     else:
         query, reference, query_ids, reference_ids = load_descriptor_h5(submission_path)
-        submission_df = get_matching_from_descs(query, reference, query_ids, reference_ids, gt_df)
+        submission_df = get_matching_from_descs(
+            query, reference, query_ids, reference_ids, gt_df
+        )
 
     ap, rp90 = evaluate_metrics(submission_df, gt_df)
 
